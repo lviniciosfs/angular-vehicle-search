@@ -1,0 +1,72 @@
+<section class="search" aria-labelledby="search-title">
+  <h1 id="search-title">Vehicle search</h1>
+
+  <form class="search__filters" role="search" (submit)="$event.preventDefault()">
+    <label class="search__field">
+      <span>Model</span>
+      <input
+        type="search"
+        autocomplete="off"
+        placeholder="e.g. X3, i4, Cooper…"
+        (input)="onTermInput($event)"
+      />
+    </label>
+
+    <label class="search__field">
+      <span>Fuel</span>
+      <select (change)="onFuelChange($event)">
+        @for (option of fuelOptions; track option.value) {
+          <option [value]="option.value">{{ option.label }}</option>
+        }
+      </select>
+    </label>
+  </form>
+
+  <div class="search__status" aria-live="polite">
+    @switch (vm().status) {
+      @case ('idle') {
+        <p>Type at least {{ minTermLength }} characters to search.</p>
+      }
+      @case ('loading') {
+        <p class="search__loading"><span class="spinner" aria-hidden="true"></span> Searching…</p>
+      }
+      @case ('success') {
+        <p>
+          {{ vm().total }} result(s) for “{{ vm().query.term }}”
+          @if (vm().fromCache) {
+            <span class="badge">cache</span>
+          }
+        </p>
+      }
+      @case ('error') {
+        <p class="search__error" role="alert">
+          Search failed: {{ vm().error }}
+          <button type="button" (click)="onRetry()">Retry</button>
+        </p>
+      }
+    }
+  </div>
+
+  <ul class="search__results" [class.search__results--stale]="vm().status === 'loading'">
+    @for (vehicle of vm().results; track vehicle.id) {
+      <li class="vehicle">
+        <span class="vehicle__name">{{ vehicle.brand }} {{ vehicle.model }}</span>
+        <span class="vehicle__meta">{{ vehicle.year }} · {{ vehicle.fuel }}</span>
+        <span class="vehicle__price">{{ vehicle.price | currency: 'EUR' : 'symbol' : '1.0-0' }}</span>
+      </li>
+    } @empty {
+      @if (vm().status === 'success') {
+        <li class="search__empty">No vehicles found.</li>
+      }
+    }
+  </ul>
+
+  <aside class="debug" aria-label="API stats">
+    <strong>API</strong>
+    <span>started: {{ apiStats().started }}</span>
+    <span>completed: {{ apiStats().completed }}</span>
+    <span>canceled: {{ apiStats().canceled }}</span>
+    <span>in flight: {{ apiStats().inFlight }}</span>
+    <small>Tip: the term “{{ forceErrorTerm }}” always fails with 503.</small>
+  </aside>
+</section>
